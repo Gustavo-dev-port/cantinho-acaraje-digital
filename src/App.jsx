@@ -598,9 +598,13 @@ export default function App() {
 
           <div className="w-24 h-24 mb-4 rounded-full bg-linear-to-tr from-orange-600 to-amber-400 flex items-center justify-center shadow-lg border-4 border-white/10 relative z-10">
             <img
-              src="logo.png"
+              src="/assets/logo.png"
               alt="Logo Cantinho do Acarajé"
               className="w-full h-full object-contain rounded-full"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/96?text=Logo";
+              }}
             />
           </div>
 
