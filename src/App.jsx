@@ -597,7 +597,11 @@ export default function App() {
           </div>
 
           <div className="w-24 h-24 mb-4 rounded-full bg-linear-to-tr from-orange-600 to-amber-400 flex items-center justify-center shadow-lg border-4 border-white/10 relative z-10">
-            <span className="text-3xl font-black text-white italic">CA</span>
+            <img
+              src="logo.png"
+              alt="Logo Cantinho do Acarajé"
+              className="w-full h-full object-contain rounded-full"
+            />
           </div>
 
           <h1 className="text-3xl font-black tracking-tight mb-1 relative z-10 text-center">
