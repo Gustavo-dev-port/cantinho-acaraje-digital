@@ -14,7 +14,11 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MAX_PROMPT_LENGTH = 2000;
+// O prompt inclui o cardápio inteiro simplificado (hoje ~6.300 caracteres
+// com 93 itens) + a pergunta do cliente. Limite generoso pra sobrar espaço
+// conforme o cardápio crescer, mas ainda protegendo contra abuso.
+const MAX_PROMPT_LENGTH = 20000;
+const MAX_SYSTEM_INSTRUCTION_LENGTH = 4000;
 
 // Alias mantido pela Google que sempre aponta pro Flash estável mais
 // recente — evita ter que trocar o nome do modelo toda vez que uma versão
@@ -62,13 +66,18 @@ Deno.serve(async (req: Request) => {
     !prompt.trim() ||
     prompt.length > MAX_PROMPT_LENGTH
   ) {
+    console.error("Prompt inválido ou muito longo:", prompt?.length);
     return jsonResponse({ error: "Prompt inválido ou muito longo." }, 400);
   }
 
   if (
     typeof systemInstruction !== "string" ||
-    systemInstruction.length > MAX_PROMPT_LENGTH
+    systemInstruction.length > MAX_SYSTEM_INSTRUCTION_LENGTH
   ) {
+    console.error(
+      "systemInstruction inválida ou muito longa:",
+      systemInstruction?.length
+    );
     return jsonResponse({ error: "systemInstruction inválida." }, 400);
   }
 
