@@ -5,30 +5,28 @@ export function useGarcomAI(menuData) {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState("A pensar no pedido...");
+  const loadingMessages = [
+    "A pensar no pedido...",
+    "A ler o cardápio...",
+    "A falar com o barman...",
+    "A preparar o acarajé...",
+    "A procurar a melhor opção...",
+    "Quase lá...",
+  ];
+  const [loadingText, setLoadingText] = useState(loadingMessages[0]);
 
   useEffect(() => {
-    let interval;
+    if (!isAiLoading) return undefined;
 
-    if (isAiLoading) {
-      const messages = [
-        "A ler o cardápio...",
-        "A falar com o barman...",
-        "A preparar o acarajé...",
-        "A procurar a melhor opção...",
-        "Quase lá...",
-      ];
+    let i = 0;
 
-      let i = 0;
-      setLoadingText(messages[0]);
-
-      interval = setInterval(() => {
-        i = (i + 1) % messages.length;
-        setLoadingText(messages[i]);
-      }, 1500);
-    }
+    const interval = setInterval(() => {
+      i = (i + 1) % loadingMessages.length;
+      setLoadingText(loadingMessages[i]);
+    }, 1500);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAiLoading]);
 
   const buildSimplifiedMenu = () => {
@@ -50,6 +48,7 @@ export function useGarcomAI(menuData) {
 
     setIsAiLoading(true);
     setAiResponse("");
+    setLoadingText(loadingMessages[0]);
 
     const simplifiedMenu = buildSimplifiedMenu();
 

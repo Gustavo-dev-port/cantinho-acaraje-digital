@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 
 export function useDarkMode() {
   const [darkMode, setDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("cantinho-dark-mode");
+    try {
+      const savedTheme = localStorage.getItem("cantinho-dark-mode");
 
-    if (savedTheme !== null) {
-      return savedTheme === "true";
+      if (savedTheme !== null) {
+        return savedTheme === "true";
+      }
+    } catch {
+      // localStorage indisponível (modo privado, política do navegador, etc.)
     }
 
     return (
@@ -15,7 +19,11 @@ export function useDarkMode() {
   });
 
   useEffect(() => {
-    localStorage.setItem("cantinho-dark-mode", String(darkMode));
+    try {
+      localStorage.setItem("cantinho-dark-mode", String(darkMode));
+    } catch {
+      // localStorage indisponível — a preferência simplesmente não persiste
+    }
   }, [darkMode]);
 
   const toggleDarkMode = () => {

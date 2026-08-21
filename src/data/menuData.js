@@ -1,4 +1,4 @@
-export const featuredItemIds = ["ac1", "p1", "d1", "cer12 "];
+export const featuredItemIds = ["ac1", "p1", "d1", "cer12"];
 
 export const menuData = {
   Destaques: [],

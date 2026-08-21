@@ -15,14 +15,19 @@ export default function Footer({ darkMode, theme }) {
         Tirou foto? Marca a gente pra aparecer no nosso Insta!
       </p>
 
-      <div
-        className={`inline-flex items-center justify-center gap-2 p-3 rounded-xl w-full text-sm font-semibold ${
-          darkMode ? "bg-slate-900" : "bg-gray-100"
+      <a
+        href="https://wa.me/5511971672326"
+        target="_blank"
+        rel="noreferrer"
+        className={`inline-flex items-center justify-center gap-2 p-3 rounded-xl w-full text-sm font-semibold transition ${
+          darkMode
+            ? "bg-slate-900 hover:bg-slate-800"
+            : "bg-gray-100 hover:bg-gray-200"
         }`}
       >
         <Info size={16} className="text-orange-500" />
         Quer comemorar niver? (11) 97167-2326
-      </div>
+      </a>
     </footer>
   );
 }

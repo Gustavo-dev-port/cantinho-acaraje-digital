@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { menuData, featuredItemIds } from "./data/menuData";
 import { getItemsByIds, validateUniqueMenuIds } from "./utils/menuUtils";
