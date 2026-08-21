@@ -6,6 +6,9 @@ export function useGarcomAI(menuData) {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+  // 'faq' = resposta pronta, vinda do cardápio real. 'ai' = sugestão gerada
+  // pela IA (pode variar). null = ainda não respondeu nada.
+  const [responseSource, setResponseSource] = useState(null);
   const loadingMessages = [
     "A pensar no pedido...",
     "A ler o cardápio...",
@@ -44,17 +47,27 @@ export function useGarcomAI(menuData) {
     return simplifiedMenu;
   };
 
-  const handleAskAI = async () => {
-    if (!aiPrompt.trim()) return;
+  // Aceita um texto opcional (usado pelos chips de sugestão rápida) — sem
+  // isso, chamar handleAskAI logo depois de um setAiPrompt(texto) ainda
+  // pegaria o valor antigo de aiPrompt, porque o setState não é síncrono.
+  const handleAskAI = async (promptOverride) => {
+    const question = (
+      typeof promptOverride === "string" ? promptOverride : aiPrompt
+    ).trim();
 
+    if (!question) return;
+
+    setAiPrompt(question);
     setAiResponse("");
+    setResponseSource(null);
 
     // 1) Perguntas comuns (horário, pagamento, vegano, história...) são
     // respondidas na hora, sem gastar chamada de IA nem depender do Gemini.
-    const faqAnswer = matchFaq(aiPrompt, menuData);
+    const faqAnswer = matchFaq(question, menuData);
 
     if (faqAnswer) {
       setAiResponse(faqAnswer);
+      setResponseSource("faq");
       return;
     }
 
@@ -64,16 +77,17 @@ export function useGarcomAI(menuData) {
 
     const simplifiedMenu = buildSimplifiedMenu();
 
-    const systemInstruction = `Você é o 'Garçom IA' super gente boa e descolado do 'Cantinho do Acarajé', um bar jovem localizado em Pinheiros, São Paulo. 
+    const systemInstruction = `Você é o 'Garçom IA' super gente boa e descolado do 'Cantinho do Acarajé', um bar jovem localizado em Pinheiros, São Paulo.
     Sua missão é ajudar clientes indecisos a escolherem o que comer e beber, cruzando o desejo deles com o nosso cardápio.
     Use um tom descontraído, inclua gírias paulistanas ou referências à cultura baiana quando fizer sentido, e seja direto (no máximo 3 ou 4 frases curtas).
     Sempre recomende itens REAIS do cardápio usando o nome exato. Recomende no máximo 2 ou 3 itens para não sobrecarregar o cliente. Use emojis.`;
 
-    const userPrompt = `Cardápio disponível:\n${simplifiedMenu}\n\nO cliente diz: "${aiPrompt}"\n\nO que você recomenda?`;
+    const userPrompt = `Cardápio disponível:\n${simplifiedMenu}\n\nO cliente diz: "${question}"\n\nO que você recomenda?`;
 
     const response = await callGeminiAPI(userPrompt, systemInstruction);
 
     setAiResponse(response);
+    setResponseSource("ai");
     setIsAiLoading(false);
   };
 
@@ -83,6 +97,7 @@ export function useGarcomAI(menuData) {
     aiResponse,
     isAiLoading,
     loadingText,
+    responseSource,
     handleAskAI,
   };
 }

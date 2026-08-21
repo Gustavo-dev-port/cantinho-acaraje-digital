@@ -1,0 +1,14 @@
+-- A policy pública products_select_public_menu (aditiva) precisa coexistir
+-- com a policy products_select, que chama private.is_member_of_company().
+-- O Postgres combina as duas com OR e, pra isso, precisa ter permissão de
+-- EXECUTE na função referenciada por QUALQUER policy aplicável ao papel —
+-- mesmo que o resultado dela nunca seja usado pra decidir a visibilidade
+-- de uma linha do cardápio público. Sem esse GRANT, toda leitura pública
+-- (mesmo de produtos que deveriam ser visíveis) falha com
+-- "permission denied for function is_member_of_company".
+--
+-- Seguro: a função não é SECURITY DEFINER, é STABLE, e sempre retorna
+-- false pro papel anon (auth.uid() é null pra quem não está autenticado,
+-- então "cu.user_id = auth.uid()" nunca casa) — não abre nenhum acesso
+-- novo a dados de outras empresas.
+grant execute on function private.is_member_of_company(uuid) to anon;

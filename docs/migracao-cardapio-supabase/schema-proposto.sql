@@ -1,8 +1,16 @@
 -- APLICADO em 2026-08-21 — ver a migration versionada em
 -- supabase/migrations/20260821053648_cardapio_digital_schema.sql (mesmo
 -- conteúdo, timestampado). Este arquivo fica aqui como referência de leitura
--- rápida. Ver README.md nesta pasta pro que ainda falta (carga de dados +
--- troca da fonte de dados no frontend — passos 3 em diante).
+-- rápida. Ver README.md nesta pasta pro que ainda falta (troca da fonte de
+-- dados no frontend — passo 4 em diante; dados já importados, passo 3).
+--
+-- ATENÇÃO: a policy products_select_public_menu abaixo (seção 3), do jeito
+-- que está escrita aqui, NÃO FUNCIONA sozinha — o EXISTS(...) contra
+-- companies falha silenciosamente porque companies também tem RLS. Duas
+-- migrations de correção foram aplicadas depois desta (ver
+-- supabase/migrations/20260821062614_* e 20260821063925_*, e a seção "O
+-- bug que só apareceu testando de verdade" no README.md desta pasta). Não
+-- copie a policy direto daqui — use a versão final no README.md.
 
 -- 1) Campos que faltam em products pra cobrir o cardápio digital
 alter table public.products

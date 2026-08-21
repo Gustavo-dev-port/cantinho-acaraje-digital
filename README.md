@@ -6,8 +6,9 @@ clientes e sugere itens do cardápio.
 
 ## Funcionalidades
 
-- **Cardápio completo** — 93 itens em 8 categorias (Acarajés & Cia, Pastéis & Caldos, Pra
-  Dividir, Drinks da Casa, Não Alcoólicas e mais), com aba "Destaques".
+- **Cardápio completo** — 93 itens em 9 categorias (Acarajés & Cia, Pastéis & Caldos, Pra
+  Dividir, Drinks da Casa, Não Alcoólicas e mais), com aba "Destaques". Vem do Supabase, com
+  fallback automático pro cardápio embutido no bundle se a rede falhar (ver Arquitetura).
 - **Selos** — Mais pedido, Vegano/vegetariano e Picante, direto no card de cada item.
 - **Modo claro/escuro**, com preferência salva no navegador.
 - **Garçom IA** — botão flutuante que abre um chat simples. Perguntas frequentes (horário,
@@ -21,6 +22,10 @@ clientes e sugere itens do cardápio.
 ```
 Navegador (React + Vite)
    │
+   ├─ Cardápio (src/hooks/useMenuData.js) ── tabela "products" (Supabase, leitura pública)
+   │    - cache local de 5 min, e cardápio embutido no bundle como fallback
+   │      instantâneo se a rede falhar ou a config do Supabase não existir
+   │
    ├─ FAQ local (src/utils/faqMatcher.js) — perguntas comuns, resposta instantânea, sem rede
    │
    └─ Edge Function "garcom-ai" (Supabase) ── Gemini API
@@ -30,11 +35,13 @@ Navegador (React + Vite)
           desconto — sempre usa o valor real do cardápio enviado no prompt
 ```
 
-O frontend é uma SPA estática (React 19 + Vite + Tailwind CSS 4), sem servidor próprio. O único
-componente de backend é a Edge Function `garcom-ai`, hospedada no mesmo projeto Supabase
-(`barcontrol-dev`) que também roda o sistema de gestão do bar (BarControl) — são sistemas
-separados compartilhando o mesmo projeto Supabase, com Row Level Security isolando os dados de
-cada um.
+O frontend é uma SPA estática (React 19 + Vite + Tailwind CSS 4), sem servidor próprio. O backend
+é só o projeto Supabase (`barcontrol-dev`) — a Edge Function `garcom-ai` e a leitura pública do
+cardápio (tabela `products`, filtrada por `company_id`). Esse mesmo projeto Supabase também roda
+o sistema de gestão do bar (BarControl) — são sistemas separados compartilhando o mesmo projeto,
+com Row Level Security isolando os dados de cada um (ver
+[`docs/migracao-cardapio-supabase/`](./docs/migracao-cardapio-supabase/) pra como isso foi
+desenhado e testado).
 
 ## Rodando localmente
 
@@ -50,6 +57,10 @@ npm run dev
 |---|---|
 | `VITE_SUPABASE_URL` | URL do projeto Supabase |
 | `VITE_SUPABASE_ANON_KEY` | Chave pública (anon) do Supabase — pública por design, não é segredo |
+| `VITE_SUPABASE_COMPANY_ID` | id da linha do Cantinho do Acarajé em `companies` — filtra quais produtos o cardápio busca |
+
+Se alguma dessas três faltar, o app não quebra: ele simplesmente usa o cardápio estático embutido
+em `src/data/menuData.js`, sem tentar rede nenhuma.
 
 A chave do Gemini **não** é uma variável de ambiente do frontend — ela fica só nos Secrets da
 Edge Function `garcom-ai`, no painel do Supabase (Project Settings → Edge Functions → Secrets,
@@ -88,20 +99,23 @@ separado do deploy do frontend.
 
 ## Próximas atualizações
 
-### Cardápio no Supabase (em andamento)
+### Cardápio no Supabase (concluído — período de transição)
 
-Hoje o cardápio (93 itens) ainda vive hardcoded em `src/data/menuData.js` — editar um preço ou
-item exige mudar código e fazer novo deploy. Está em andamento a migração desses dados pra uma
-tabela no Supabase, pra virar edição direto numa tela/planilha.
+O cardápio (93 itens) migrou de `src/data/menuData.js` pra uma tabela no Supabase — editar um
+preço ou item agora pode virar uma tela/planilha, sem precisar mudar código nem fazer deploy.
 
-- **Schema já aplicado** (2026-08-21): colunas novas em `products` (`description`, `tags`,
-  `is_featured`, `sort_order`, `slug`), coluna `companies.is_menu_public` e a policy de leitura
-  pública `products_select_public_menu` (aditiva e escopada por empresa) já existem no banco —
-  ver a migration em
-  [`supabase/migrations/20260821053648_cardapio_digital_schema.sql`](./supabase/migrations/20260821053648_cardapio_digital_schema.sql).
-- **Ainda pendente**: carga dos 93 itens na tabela e troca da fonte de dados no frontend (hoje
-  bloqueado porque o Cantinho do Acarajé ainda não tem uma linha em `companies` neste projeto).
-- Plano completo, passo a passo, com a justificativa de cada decisão de segurança:
+- **Schema, RLS, dados e frontend já migrados** (2026-08-21): colunas novas em `products`,
+  `companies.is_menu_public`, a empresa Cantinho do Acarajé criada, os 93 itens importados, e o
+  app buscando de lá via `src/hooks/useMenuData.js` — com cache de 5 min e fallback automático
+  pro cardápio estático embutido se a rede ou o Supabase falharem. A leitura pública foi testada
+  de verdade com o papel `anon` (não só o texto da policy) — esse teste revelou e corrigiu um bug
+  real (a policy original não deixava ninguém ler nada, nem os produtos que deveriam ser
+  públicos). Ver migrations em [`supabase/migrations/`](./supabase/migrations/) (arquivos com
+  prefixo `20260821`).
+- **`src/data/menuData.js` continua no repositório de propósito** — é o fallback offline/erro e a
+  semente original dos dados. Só remover depois de um período rodando estável com a fonte nova.
+- Plano completo, passo a passo, com a justificativa de cada decisão de segurança (incluindo o
+  bug encontrado e corrigido):
   [`docs/migracao-cardapio-supabase/README.md`](./docs/migracao-cardapio-supabase/README.md).
 
 ### Roadmap de UI/UX

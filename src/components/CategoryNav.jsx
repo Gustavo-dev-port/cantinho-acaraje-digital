@@ -1,3 +1,18 @@
+// Truque clássico de "sombra de scroll": duas camadas de cor sólida que
+// rolam junto com o conteúdo (escondem o próprio fade quando não há mais
+// nada pra rolar naquela direção) mais duas sombras fixas nas bordas.
+// Sem JS, sem listener de scroll — só CSS.
+function scrollFadeStyle(baseColor) {
+  return {
+    backgroundImage: `linear-gradient(to right, ${baseColor} 30%, rgba(0,0,0,0)), linear-gradient(to left, ${baseColor} 30%, rgba(0,0,0,0)), radial-gradient(farthest-side at 0 50%, rgba(0,0,0,0.2), rgba(0,0,0,0)), radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.2), rgba(0,0,0,0))`,
+    backgroundPosition: "left, right, left, right",
+    backgroundRepeat: "no-repeat",
+    backgroundColor: baseColor,
+    backgroundSize: "24px 100%, 24px 100%, 10px 100%, 10px 100%",
+    backgroundAttachment: "local, local, scroll, scroll",
+  };
+}
+
 export default function CategoryNav({
   categories,
   activeCategory,
@@ -13,6 +28,7 @@ export default function CategoryNav({
         role="tablist"
         aria-label="Categorias do cardápio"
         className="flex overflow-x-auto hide-scrollbar px-4 py-3 gap-2 scroll-smooth"
+        style={scrollFadeStyle(darkMode ? "#020617" : "#faf8f5")}
       >
         {categories.map((cat) => (
           <button

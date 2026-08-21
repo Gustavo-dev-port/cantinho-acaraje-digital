@@ -1,11 +1,11 @@
 import { useState } from "react";
 
-import { menuData, featuredItemIds } from "./data/menuData";
 import { getItemsByIds, validateUniqueMenuIds } from "./utils/menuUtils";
 import { getTheme } from "./styles/theme";
 
 import { useGarcomAI } from "./hooks/useGarcomAI";
 import { useDarkMode } from "./hooks/useDarkMode";
+import { useMenuData } from "./hooks/useMenuData";
 
 import Header from "./components/Header";
 import AiButton from "./components/AiButton";
@@ -19,6 +19,7 @@ export default function App() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const { menuData, featuredItemIds, refreshError } = useMenuData();
 
   const menuWithFeatured = {
     ...menuData,
@@ -32,8 +33,14 @@ export default function App() {
   const categories = Object.keys(menuWithFeatured);
   const theme = getTheme(darkMode);
 
-  const { aiPrompt, setAiPrompt, aiResponse, isAiLoading, handleAskAI } =
-    useGarcomAI(menuWithFeatured);
+  const {
+    aiPrompt,
+    setAiPrompt,
+    aiResponse,
+    isAiLoading,
+    responseSource,
+    handleAskAI,
+  } = useGarcomAI(menuWithFeatured);
 
   return (
     <div
@@ -45,6 +52,16 @@ export default function App() {
           toggleDarkMode={toggleDarkMode}
           theme={theme}
         />
+
+        {refreshError && (
+          <p
+            className={`px-4 pt-2 text-xs text-center ${theme.textMuted}`}
+            role="status"
+          >
+            Exibindo o cardápio salvo — não foi possível buscar a versão mais
+            recente agora.
+          </p>
+        )}
 
         <AiButton onClick={() => setIsAiModalOpen(true)} />
 
@@ -74,6 +91,7 @@ export default function App() {
           setAiPrompt={setAiPrompt}
           aiResponse={aiResponse}
           isAiLoading={isAiLoading}
+          responseSource={responseSource}
           handleAskAI={handleAskAI}
           setIsAiModalOpen={setIsAiModalOpen}
         />
