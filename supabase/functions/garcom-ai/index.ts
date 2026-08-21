@@ -20,15 +20,37 @@ const CORS_HEADERS = {
 const MAX_PROMPT_LENGTH = 20000;
 const MAX_SYSTEM_INSTRUCTION_LENGTH = 4000;
 
-// Alias mantido pela Google que sempre aponta pro Flash estável mais
+// Aliases mantidos pela Google que sempre apontam pro Flash estável mais
 // recente — evita ter que trocar o nome do modelo toda vez que uma versão
 // nova sai (foi exatamente isso que quebrou com "gemini-2.5-flash").
-const GEMINI_MODEL = "gemini-flash-latest";
+// Em caso de sobrecarga (503 "high demand", comum em modelo popular),
+// caímos pro Flash-Lite como reserva, com uma pequena pausa antes.
+const PRIMARY_MODEL = "gemini-flash-latest";
+const FALLBACK_MODEL = "gemini-flash-lite-latest";
+const RETRY_DELAY_MS = 700;
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callGemini(
+  model: string,
+  apiKey: string,
+  payload: unknown
+): Promise<Response> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 }
 
@@ -81,33 +103,57 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "systemInstruction inválida." }, 400);
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
     systemInstruction: { parts: [{ text: systemInstruction }] },
   };
 
   try {
-    const geminiResponse = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const primaryResponse = await callGemini(PRIMARY_MODEL, apiKey, payload);
 
-    if (!geminiResponse.ok) {
-      const errorBody = await geminiResponse.text();
-      console.error("Erro da API do Gemini:", geminiResponse.status, errorBody);
+    if (primaryResponse.ok) {
+      const data = await primaryResponse.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+      return jsonResponse({ text });
+    }
+
+    const primaryStatus = primaryResponse.status;
+    console.error(
+      `Erro da API do Gemini (${PRIMARY_MODEL}):`,
+      primaryStatus,
+      await primaryResponse.text()
+    );
+
+    // Só vale tentar o modelo reserva em erro de sobrecarga/transitório
+    // (503). Erro de autenticação, cota ou requisição inválida não melhora
+    // trocando de modelo.
+    if (primaryStatus !== 503) {
       return jsonResponse(
-        { error: `Erro ao consultar a IA (status ${geminiResponse.status}).` },
+        { error: `Erro ao consultar a IA (status ${primaryStatus}).` },
         502
       );
     }
 
-    const data = await geminiResponse.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+    await sleep(RETRY_DELAY_MS);
 
-    return jsonResponse({ text });
+    const fallbackResponse = await callGemini(FALLBACK_MODEL, apiKey, payload);
+
+    if (fallbackResponse.ok) {
+      const data = await fallbackResponse.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+      return jsonResponse({ text });
+    }
+
+    console.error(
+      `Erro da API do Gemini (${FALLBACK_MODEL}):`,
+      fallbackResponse.status,
+      await fallbackResponse.text()
+    );
+
+    return jsonResponse(
+      { error: `Erro ao consultar a IA (status ${fallbackResponse.status}).` },
+      502
+    );
   } catch (error) {
     console.error("Falha ao chamar a API do Gemini:", error);
     return jsonResponse({ error: "Falha ao chamar a IA." }, 502);
