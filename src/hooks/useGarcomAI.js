@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { callGeminiAPI } from "../services/aiServices";
+import { matchFaq } from "../utils/faqMatcher";
 
 export function useGarcomAI(menuData) {
   const [aiPrompt, setAiPrompt] = useState("");
@@ -46,8 +47,19 @@ export function useGarcomAI(menuData) {
   const handleAskAI = async () => {
     if (!aiPrompt.trim()) return;
 
-    setIsAiLoading(true);
     setAiResponse("");
+
+    // 1) Perguntas comuns (horário, pagamento, vegano, história...) são
+    // respondidas na hora, sem gastar chamada de IA nem depender do Gemini.
+    const faqAnswer = matchFaq(aiPrompt, menuData);
+
+    if (faqAnswer) {
+      setAiResponse(faqAnswer);
+      return;
+    }
+
+    // 2) Perguntas mais abertas (recomendações, "o que eu peço") vão pra IA.
+    setIsAiLoading(true);
     setLoadingText(loadingMessages[0]);
 
     const simplifiedMenu = buildSimplifiedMenu();
