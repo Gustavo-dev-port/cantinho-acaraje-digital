@@ -301,21 +301,21 @@ export const menuData = {
     {
       id: "cp1",
       name: "Caipirinha de Sake",
-      desc: "Sabores: limão, abacaxi, morango, kiwi ou maracujá. Sabor extra por mais R$ 4,00.",
+      desc: "Sabores: limão, abacaxi, morango, kiwi ou maracujá. Fruta extra por mais R$ 4,00.",
       price: 28,
       tags: [],
     },
     {
       id: "cp2",
       name: "Caipirinha Velho Barreiro / 51",
-      desc: "Sabores: limão, abacaxi, morango, kiwi ou maracujá. Sabor extra por mais R$ 4,00.",
+      desc: "Sabores: limão, abacaxi, morango, kiwi ou maracujá. Fruta extra por mais R$ 4,00.",
       price: 25,
       tags: [],
     },
     {
       id: "cp3",
       name: "Caipirinha Smirnoff",
-      desc: "Sabores: limão, abacaxi, morango, kiwi ou maracujá. Sabor extra por mais R$ 4,00.",
+      desc: "Sabores: limão, abacaxi, morango, kiwi ou maracujá. Fruta extra por mais R$ 4,00.",
       price: 30,
       tags: [],
     },
@@ -337,9 +337,16 @@ export const menuData = {
     },
     {
       id: "cer3",
-      name: "Original / Spaten 600ml",
+      name: "Spaten 600ml",
       desc: "Cerveja garrafa 600ml.",
       price: 19,
+      tags: [],
+    },
+    {
+      id: "cer14",
+      name: "Original 600ml",
+      desc: "Cerveja garrafa 600ml.",
+      price: 22,
       tags: [],
     },
     {
@@ -618,7 +625,14 @@ export const menuData = {
       id: "na6",
       name: "Água de Coco",
       desc: "Água de coco.",
-      price: 8,
+      price: 12,
+      tags: [],
+    },
+    {
+      id: "na14",
+      name: "Gelo de Coco",
+      desc: "Gelo de coco.",
+      price: 6,
       tags: [],
     },
     {
